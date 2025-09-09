@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Course Management</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 30px auto; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; }
+        th { background: #f2f2f2; }
+        .inline { display: inline; }
+        #editArea { display: none; margin-top: 20px; padding: 12px; border: 1px solid #ddd; background: #f9f9f9; }
+        input, textarea { width: 100%; margin: 6px 0; padding: 8px; }
+        button { padding: 6px 12px; margin-top: 6px; }
+    </style>
+</head>
+<body>
+    <h2>Course Management</h2>
+
+    <h3>Add New Course</h3>
+    <form method="post" action="/course">
+        <input type="text" name="title" placeholder="Course Title" required />
+        <input type="text" name="duration" placeholder="Duration (e.g., 6 weeks)" />
+        <input type="text" name="mode" placeholder="Mode (online/offline)" />
+        <textarea id="desc" name="description" placeholder="Description"></textarea>
+        <button type="button" onclick="generate()">Generate Description</button>
+        <button type="submit">Add</button>
+    </form>
+
+    <h3>Courses List</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Duration</th>
+                <th>Mode</th>
+                <th>Description</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in courses %}
+            <tr>
+                <td>{{ c.id }}</td>
+                <td>{{ c.title }}</td>
+                <td>{{ c.duration }}</td>
+                <td>{{ c.mode }}</td>
+                <td>{{ c.description }}</td>
+                <td>
+                    <button 
+                        class="edit-btn"
+                        data-id="{{ c.id }}"
+                        data-title="{{ c.title }}"
+                        data-duration="{{ c.duration }}"
+                        data-mode="{{ c.mode }}"
+                        data-description="{{ c.description }}">
+                        Edit
+                    </button>
+                    <form class="inline" method="post" action="/course/{{ c.id }}/delete">
+                        <button type="submit">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div id="editArea">
+        <h3>Edit Course</h3>
+        <form id="editForm" method="post">
+            <input id="etitle" name="title" placeholder="Course Title" required />
+            <input id="eduration" name="duration" placeholder="Duration" />
+            <input id="emode" name="mode" placeholder="Mode" />
+            <textarea id="edesc" name="description" placeholder="Description"></textarea>
+            <button type="button" onclick="generateEdit()">Generate Description</button>
+            <button type="submit">Update</button>
+            <button type="button" onclick="hideEdit()">Cancel</button>
+        </form>
+    </div>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // Attach event listeners to all edit buttons
+      document.querySelectorAll(".edit-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.dataset.id;
+          const title = btn.dataset.title;
+          const duration = btn.dataset.duration;
+          const mode = btn.dataset.mode;
+          const desc = btn.dataset.description;
+
+          document.getElementById('editArea').style.display = 'block';
+          document.getElementById('editForm').action = '/course/' + id + '/edit';
+          document.getElementById('etitle').value = title;
+          document.getElementById('eduration').value = duration;
+          document.getElementById('emode').value = mode;
+          document.getElementById('edesc').value = desc || '';
+        });
+      });
+    });
+
+    function hideEdit() {
+      document.getElementById('editArea').style.display = 'none';
+    }
+
+    async function generate() {
+      const title = document.querySelector('input[name=title]').value;
+      const duration = document.querySelector('input[name=duration]').value;
+      const mode = document.querySelector('input[name=mode]').value;
+      const res = await fetch('/api/generate_description', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({title, duration, mode})
+      });
+      const data = await res.json();
+      document.getElementById('desc').value = data.description;
+    }
+
+    async function generateEdit() {
+      const title = document.getElementById('etitle').value;
+      const duration = document.getElementById('eduration').value;
+      const mode = document.getElementById('emode').value;
+      const res = await fetch('/api/generate_description', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({title, duration, mode})
+      });
+      const data = await res.json();
+      document.getElementById('edesc').value = data.description;
+    }
+    </script>
+</body>
+</html>
